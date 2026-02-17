@@ -1,0 +1,15 @@
+# ─────────────────────────────────────────────────
+# Sensor-Logger  ·  Storage Configuration
+# ─────────────────────────────────────────────────
+
+storage:
+  base_dir: "./data"                    # root output directory
+  session_prefix: "drive"               # e.g. drive_20260214_153045
+  csv:
+    flush_interval_ms: 100              # buffered writer flush period (low = safer, high = faster)
+    buffer_size_kb: 256                 # underlying bufio buffer
+    write_header: true
+  frames:
+    save_path: "frames"                 # sub-dir under session for camera JPEGs
+    naming: "timestamp"                 # timestamp | sequence
+  overwrite: false                      # refuse to overwrite existing session dirs

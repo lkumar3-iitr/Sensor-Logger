@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────
+# Sensor-Logger  ·  Sensor Configuration
+# ─────────────────────────────────────────────────
+
+sensors:
+  camera:
+    enabled: true
+    device_path: "/dev/video0"          # V4L2 device (Linux) – ignored on simulated mode
+    resolution:
+      width: 1920
+      height: 1080
+    fps: 30
+    format: "MJPEG"                     # MJPEG | RAW
+    channel_buffer: 120                 # buffered channel size (≥ 4× fps keeps zero-drop)
+    save_frames: true                   # persist individual JPEG frames alongside CSV
+
+  lidar:
+    enabled: true
+    address: "192.168.1.201"            # Velodyne / Ouster IP
+    port: 2368
+    model: "VLP-16"                     # VLP-16 | OS1-64
+    rpm: 600
+    channel_buffer: 256
+    points_per_packet: 384
+
+  gps:
+    enabled: true
+    serial_port: "COM4"                 # /dev/ttyUSB0 on Linux
+    baud_rate: 9600
+    update_rate_hz: 10
+    channel_buffer: 64
+
+  imu:
+    enabled: true
+    serial_port: "COM5"
+    baud_rate: 115200
+    update_rate_hz: 100
+    channel_buffer: 512
+
+  radar:
+    enabled: false
+    address: "192.168.1.202"
+    port: 6000
+    channel_buffer: 128
+
+simulation:
+  enabled: true                         # when true, all readers generate synthetic data
+  duration_seconds: 0                   # 0 = run until Ctrl-C
