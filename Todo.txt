@@ -1,0 +1,30 @@
+Todo
+
+
+
+intel realsense D456 - controller, service, models(refer documentation)
+
+Create RealTimeData.go
+
+controller will have a router which connects to the device, it will also contain the commands for operations on the device (refer documentation)
+
+for each input and output we will call service file.
+
+service file will have same method names with service suffix, It will have the main logic to process the data from the device,
+
+Find whether we can run global time and use it for synchronization among each device.
+
+
+current-logic------------
+
+
+decide a time frame window, collect all the data from each device in this window.
+Since the data frames from each device can fluctuate, we can dynamically increase the size of the storage array(RGB,IMU,...) depending on the number of calls by that particular controller.
+
+push the time window data to RealTimeData.go, Each instance of this will be used to store the data with window size in ssd. when stored, flush the instance/s of this class.
+
+   
+
+
+
+
