@@ -33,6 +33,10 @@ func main() {
 	// The camera service handles commands inside StartCamera
 	cameraD456 := controller.NewCameraController("Camera_D456", fusionController.GetCameraChannel())
 
+	// 4. Initialize the LiDAR controller, injecting the channel from the Fusion logic
+	// The LiDAR service handles UDP communication inside StartLidar
+	lidarL2 := controller.NewLidarController("LiDAR_L2", fusionController.GetLidarChannel())
+
 	// ============================================ Run Routines ============================================
 
 	// Start the data multiplexing logic inside the Fusion Controller
@@ -53,7 +57,17 @@ func main() {
 		}
 	}()
 
-	// 4. Await interrupts to shut everything down cleanly
+	// Start reading LiDAR scans over UDP inside the LiDAR Controller
+	wg.Add(1)
+	go func() {
+		err := lidarL2.StartLidar(ctx, &wg)
+		if err != nil {
+			fmt.Printf("LiDAR exited loop with err: %v\n", err)
+			cancel() // Gracefully halt the other routines if hardware completely fails
+		}
+	}()
+
+	// 5. Await interrupts to shut everything down cleanly
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
@@ -62,6 +76,7 @@ func main() {
 
 	fmt.Println("\n[Main] Shutdown signal detected! Attempting to close goroutines and store final arrays.")
 	cameraD456.StopCamera()
+	lidarL2.StopLidar()
 	cancel()  // Release the context to break out of controller loops
 	wg.Wait() // Wait for all channels and SSD writes to finish
 

@@ -18,7 +18,7 @@ type DataFusionController struct {
 	windowSize    time.Duration
 
 	cameraDataChan chan models.CameraFrame
-	// other sensors here ...
+	lidarDataChan  chan models.LidarScan
 }
 
 func NewDataFusionController(windowSize time.Duration) *DataFusionController {
@@ -27,6 +27,7 @@ func NewDataFusionController(windowSize time.Duration) *DataFusionController {
 		currentWindow:  models.NewRealTimeData(now, windowSize),
 		windowSize:     windowSize,
 		cameraDataChan: make(chan models.CameraFrame, 500), // Buffer to handle spikes
+		lidarDataChan:  make(chan models.LidarScan, 100),   // L2 scans at 5.55 Hz, lower buffer needed
 	}
 }
 
@@ -93,6 +94,19 @@ func (f *DataFusionController) StartIngestListeners(ctx context.Context, wg *syn
 					f.currentWindow.EndTime.Format(time.Kitchen))
 			}
 			f.windowMutex.Unlock()
+		case data := <-f.lidarDataChan:
+			// Inject LiDAR scan into the currently tracked window structure
+			f.windowMutex.Lock()
+
+			if f.currentWindow.IsInWindow(data.Timestamp) {
+				f.currentWindow.AddLidarScan(data)
+			} else {
+				fmt.Printf("[DataFusionController] LiDAR scan dropped: timestamp %v out of current window [%v - %v]\n",
+					data.Timestamp.Format(time.Kitchen),
+					f.currentWindow.StartTime.Format(time.Kitchen),
+					f.currentWindow.EndTime.Format(time.Kitchen))
+			}
+			f.windowMutex.Unlock()
 		}
 	}
 }
@@ -100,4 +114,9 @@ func (f *DataFusionController) StartIngestListeners(ctx context.Context, wg *syn
 // GetCameraChannel permits external controllers to feed into the fusion queue
 func (f *DataFusionController) GetCameraChannel() chan<- models.CameraFrame {
 	return f.cameraDataChan
+}
+
+// GetLidarChannel permits external controllers to feed LiDAR data into the fusion queue
+func (f *DataFusionController) GetLidarChannel() chan<- models.LidarScan {
+	return f.lidarDataChan
 }

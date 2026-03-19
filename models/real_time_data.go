@@ -20,7 +20,8 @@ type RealTimeData struct {
 
 	// Slices to hold data dynamically. They grow as new data comes in during this time window.
 	CameraFrames []CameraFrame
-	// GPS data, LiDAR data etc. would be added here similarly.
+	LidarScans   []LidarScan
+	// GPS data etc. would be added here similarly.
 }
 
 // NewRealTimeData creates a new window instance covering the specified duration.
@@ -29,6 +30,7 @@ func NewRealTimeData(start time.Time, duration time.Duration) *RealTimeData {
 		StartTime:    start,
 		EndTime:      start.Add(duration),
 		CameraFrames: make([]CameraFrame, 0), // Starts empty, grows dynamically based on number of calls
+		LidarScans:   make([]LidarScan, 0),
 	}
 }
 
@@ -45,6 +47,14 @@ func (rtd *RealTimeData) AddCameraFrame(frame CameraFrame) {
 	rtd.CameraFrames = append(rtd.CameraFrames, frame)
 }
 
+// AddLidarScan pushes a new LiDAR scan into this time window's storage array.
+func (rtd *RealTimeData) AddLidarScan(scan LidarScan) {
+	rtd.mutex.Lock()
+	defer rtd.mutex.Unlock()
+
+	rtd.LidarScans = append(rtd.LidarScans, scan)
+}
+
 // FlushToSSD is a mock function that simulates writing the window's data
 // to persistent storage (like an SSD) and then clearing the data from memory.
 func (rtd *RealTimeData) FlushToSSD() error {
@@ -52,14 +62,16 @@ func (rtd *RealTimeData) FlushToSSD() error {
 	defer rtd.mutex.Unlock()
 
 	// TODO: Replace with actual file writing logic (e.g., CSV, binary format, or Database)
-	fmt.Printf("[RealTimeData] Writing window [%s - %s] to SSD. Total Camera Frames: %d\n",
+	fmt.Printf("[RealTimeData] Writing window [%s - %s] to SSD. Camera Frames: %d, LiDAR Scans: %d\n",
 		rtd.StartTime.Format(time.RFC3339),
 		rtd.EndTime.Format(time.RFC3339),
-		len(rtd.CameraFrames))
+		len(rtd.CameraFrames),
+		len(rtd.LidarScans))
 
 	// Clear the slices down to size 0. Go's slice re-slicing keeps the underlying array capacity
 	// but changes the length, freeing up the logical space for GC or reuse.
 	rtd.CameraFrames = nil
+	rtd.LidarScans = nil
 
 	return nil
 }
